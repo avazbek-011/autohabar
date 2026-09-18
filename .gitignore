@@ -61,3 +61,6 @@ desktop.ini
 logs/
 tmp/
 .claude/settings.local.json
+
+# Yordamchi dasturlar (cloudflared.exe ~54 MB) — GitHub ga yuklanmaydi
+tools/
