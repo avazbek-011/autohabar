@@ -78,7 +78,7 @@ unda yura olmaysiz.
 
 ### C) Render — hamma narsa ishlaydigan sayt
 
-**https://autoxabar.onrender.com** *(hali ishga tushirilmagan)*
+**https://autoxabar-7tbz.onrender.com** ✅ *ishlayapti*
 
 Bu yerda ro'yxatdan o'tish, akkaunt ulash, to'lov — hammasi ishlaydi.
 Kompyuteringiz o'chsa ham ishlaydi. Manzil hech qachon o'zgarmaydi.
@@ -359,7 +359,7 @@ Kod to'liq yozilgan va sinovdan o'tgan. Sizdan faqat kalitlar kerak.
 3. **Endpoint URL** maydoniga yozing:
 
 ```
-https://autoxabar.onrender.com/api/payme
+https://autoxabar-7tbz.onrender.com/api/payme
 ```
 
 4. **Buyurtma maydoni (account)** yarating — nomi **aynan** shunday bo'lsin:
@@ -512,7 +512,7 @@ Manba: https://my.telegram.org → API development tools
 |---|---|
 | Kod (GitHub) | https://github.com/avazbek-011/autoxabar |
 | Tanishtiruv sahifasi | https://avazbek-011.github.io/autoxabar/ |
-| Doimiy sayt | *Render'da ishga tushirilgach* |
+| Doimiy sayt | https://autoxabar-7tbz.onrender.com |
 
 ### Maxfiy fayllar — hech qachon tarqatmang
 
