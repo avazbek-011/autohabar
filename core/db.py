@@ -486,15 +486,55 @@ def init_db():
                 )
         conn.commit()
 
-        has_admin = conn.execute(
-            "SELECT 1 FROM users WHERE role = 'admin' LIMIT 1"
-        ).fetchone()
-        if not has_admin:
+        _ensure_admin(conn, secrets, generate_password_hash)
+    finally:
+        conn.close()
+
+
+def _admin_phone():
+    """ADMIN_PHONE ni kirish formasi kutgan ko'rinishga keltiradi.
+
+    "+998 90 000 00 00", "998900000000" va "+998900000000" — hammasi bir xil
+    saqlanishi kerak, aks holda admin kirishda topilmaydi.
+    """
+    import re
+
+    digits = re.sub(r"\D", "", config.ADMIN_PHONE or "")
+    if len(digits) == 9:
+        digits = "998" + digits
+    return "+" + digits if len(digits) == 12 else (config.ADMIN_PHONE or "").strip()
+
+
+def _ensure_admin(conn, secrets, generate_password_hash):
+    """Birinchi adminni yaratadi yoki muhit o'zgaruvchilari bilan moslaydi.
+
+    ADMIN_PASSWORD muhitda aniq berilgan bo'lsa, u ustun hisoblanadi: har
+    ishga tushishda admin paroli va telefoni shu qiymatlarga keltiriladi.
+    Render kabi serverlarda bazaga to'g'ridan-to'g'ri kirib bo'lmaydi —
+    xato yozilgan parolni tuzatish uchun Environment'dagi qiymatni
+    o'zgartirish kifoya.
+    """
+    phone = _admin_phone()
+    explicit_password = bool((os.environ.get("ADMIN_PASSWORD") or "").strip())
+
+    admin = conn.execute(
+        "SELECT id FROM users WHERE role = 'admin' ORDER BY id LIMIT 1"
+    ).fetchone()
+
+    if not admin:
+        # Shu raqam oddiy foydalanuvchi sifatida bor bo'lsa — admin qilamiz
+        existing = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE users SET role = 'admin', password_hash = ?, updated_at = ? WHERE id = ?",
+                (generate_password_hash(config.ADMIN_PASSWORD), now_str(), existing["id"]),
+            )
+        else:
             conn.execute(
                 "INSERT INTO users(phone, password_hash, name, role, status, ref_code, "
                 "created_at, updated_at) VALUES(?,?,?,?,?,?,?,?)",
                 (
-                    config.ADMIN_PHONE,
+                    phone,
                     generate_password_hash(config.ADMIN_PASSWORD),
                     config.ADMIN_NAME,
                     "admin",
@@ -504,6 +544,24 @@ def init_db():
                     now_str(),
                 ),
             )
-            conn.commit()
-    finally:
-        conn.close()
+        conn.commit()
+        return
+
+    if not explicit_password:
+        return  # parol muhitda berilmagan — mavjud adminni o'zgartirmaymiz
+
+    # Telefon boshqa foydalanuvchida band bo'lmasa, uni ham moslaymiz
+    clash = conn.execute(
+        "SELECT id FROM users WHERE phone = ? AND id != ?", (phone, admin["id"])
+    ).fetchone()
+    if clash:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
+            (generate_password_hash(config.ADMIN_PASSWORD), now_str(), admin["id"]),
+        )
+    else:
+        conn.execute(
+            "UPDATE users SET phone = ?, password_hash = ?, updated_at = ? WHERE id = ?",
+            (phone, generate_password_hash(config.ADMIN_PASSWORD), now_str(), admin["id"]),
+        )
+    conn.commit()
